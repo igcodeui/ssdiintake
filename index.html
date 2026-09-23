@@ -188,6 +188,10 @@ footer,.footer,.export-area{background:#07111f!important;color:#91a4bb!important
 /* Avoid accidental light text areas */
 [style*="background:#fff"],[style*="background: #fff"],[style*="background:white"],[style*="background: white"]{background:#0b1626!important;color:#e7eef8!important;border-color:#29425e!important}
 @media(max-width:900px){aside{background:rgba(6,15,27,.97)}main{padding:18px}.hero,.card{border-radius:14px}}
+
+/* Closing / Attorney Callback premium UI */
+.closing-card{position:relative;overflow:hidden}.closing-card:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 85% 8%,rgba(56,120,255,.12),transparent 30%),radial-gradient(circle at 10% 90%,rgba(30,210,170,.08),transparent 28%)}
+.closing-kicker{position:relative;display:inline-flex;padding:6px 10px;border-radius:999px;background:rgba(45,111,255,.12);border:1px solid rgba(70,130,255,.28);color:#79a8ff;font-size:11px;font-weight:800;letter-spacing:.12em;margin-bottom:10px}.closing-card h2,.closing-card>*{position:relative}.closing-schedule,.closing-script{position:relative;margin-top:18px;padding:20px;border:1px solid rgba(110,145,190,.22);border-radius:16px;background:rgba(9,18,32,.72);box-shadow:0 12px 35px rgba(0,0,0,.18)}.closing-schedule-head{display:flex;gap:12px;align-items:center}.closing-icon{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(50,115,255,.14);font-size:20px}.closing-schedule-head strong{display:block;color:#f4f7fb}.closing-schedule-head small{display:block;color:#8fa3bd;margin-top:3px}.closing-calendly{display:inline-flex;margin-top:16px;padding:11px 16px;border-radius:10px;background:linear-gradient(135deg,#3478ff,#2359cf);color:#fff;text-decoration:none;font-weight:800;box-shadow:0 8px 22px rgba(35,89,207,.25)}.closing-fields{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-top:16px}.closing-fields label{font-size:12px;color:#9eb0c7;font-weight:700}.closing-fields input{display:block;width:100%;box-sizing:border-box;margin-top:7px;background:#07111f;border:1px solid #29415e;color:#eef5ff;border-radius:10px;padding:12px}.closing-script{border-color:rgba(55,150,255,.22);background:linear-gradient(180deg,rgba(10,24,43,.92),rgba(7,15,27,.92))}.closing-script .who{color:#70a9ff;font-weight:900;font-size:11px;letter-spacing:.08em;margin-bottom:12px}.closing-line{color:#d8e2ef;line-height:1.7;margin:0 0 14px}.closing-action{margin:14px 0;padding:11px 13px;border-left:3px solid #f1ad22;background:rgba(241,173,34,.07);color:#ffd47a;border-radius:0 9px 9px 0}.attorney-contact{display:flex;flex-direction:column;gap:4px;padding:14px 16px;margin:12px 0 16px;border-radius:12px;background:rgba(27,43,66,.65);border:1px solid rgba(95,130,170,.25)}.attorney-contact strong{color:#fff}.attorney-contact span{font-size:20px;font-weight:900;color:#74a9ff;letter-spacing:.03em}.closing-actions{position:relative;display:flex;gap:10px;justify-content:flex-end;margin-top:18px}@media(max-width:760px){.closing-fields{grid-template-columns:1fr}.closing-actions{flex-direction:column}.closing-actions .btn{width:100%}}
 </style>
 
 </head>
@@ -206,7 +210,7 @@ const QUESTIONS=[{"num": "1", "label": "Comments", "type": "textarea", "section"
 const CALL_FLOW=[
  {id:"opening",title:"Opening / Client Introduction",script:["Thank you for calling Social Security Disability Attorney PLLC. My name is [Agent Name] and I am one of our intake specialists. I would like to ask you a few questions today to see if we may be able to help you with your Social Security disability case.","Everything you share with me today is treated as confidential. There is no obligation , and our firm only get paid if we win your case, so there is no cost to you upfront.","Let me start with some basic information. Can I get your full legal name as it appears on your Social Security Card?"]}
 ];
-const sections=["SSDI CALL SCRIPT — INITIAL QUALIFICATION",...new Set(QUESTIONS.map(q=>q.section))],answers={},loaded=JSON.parse(localStorage.getItem("ssdi_intake_answers")||"{}");
+const sections=["SSDI CALL SCRIPT — INITIAL QUALIFICATION",...new Set(QUESTIONS.map(q=>q.section)),"CLOSING / ATTORNEY CALLBACK"],answers={},loaded=JSON.parse(localStorage.getItem("ssdi_intake_answers")||"{}");
 Object.assign(answers,loaded);let current=0;
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 function setA(k,v){answers[k]=v;localStorage.setItem('ssdi_intake_answers',JSON.stringify(answers));}
@@ -383,7 +387,56 @@ function syncCallScriptToIntake(){if(answers.pre_full_name){answers.q_2=answers.
 function goToFullIntake(){if(!String(answers.pre_full_name||'').trim()){alert("Enter the claimant's full legal name before continuing.");return}syncCallScriptToIntake();current=1;render();}
 function renderKeepPosition(){const y=window.scrollY||document.documentElement.scrollTop||0;render();requestAnimationFrame(()=>window.scrollTo({top:y,behavior:'auto'}));}
 
-function render(){const sec=sections[current];if(current===0){document.getElementById("app").innerHTML=renderCallFlow();}else{let qs=QUESTIONS.filter(q=>q.section===sec);if(sec==='CITIZENSHIP'&&answers.q_17==='YES'){qs=qs.filter(q=>!['18','19','20','21','22'].includes(q.num));}document.getElementById("app").innerHTML=`<section class="card"><h2>${esc(sec)}</h2><div class="section-intro"><div><strong>GUIDED WORKFLOW</strong><br><span>Answer the question, follow any conditional instruction, then continue. DQ checkpoints stop the intake.</span></div><span>${qs.length} items in this section</span></div><div class="grid">${qs.map(renderQuestion).join("")}</div><div class="stop" id="stop"></div><div class="actions2"><button class="btn" onclick="prev()">↶ Go Back</button><button class="btn primary" onclick="next()">Continue →</button></div></section>`;}document.querySelectorAll(".navitem").forEach((x,i)=>x.classList.toggle("active",i===current));document.getElementById("bar").style.width=((current+1)/sections.length*100)+"%";scrollTo({top:0,behavior:"smooth"});}
+const CLOSING_SCRIPT={
+ title:"CLOSING / ATTORNEY CALLBACK",
+ calendly:"https://calendly.com/disabilityattorneyusa",
+ attorney:"Michael – Attorney",
+ phone:"888-750-9110"
+};
+function claimantFirstName(){
+ const full=String(answers.pre_full_name||answers.q_2||"").trim();
+ return full ? full.split(/\s+/)[0] : "[Claimant First Name]";
+}
+function renderClosing(){
+ const first=claimantFirstName();
+ const day=String(answers.callback_day||"");
+ const time=String(answers.callback_time||"");
+ const tz=String(answers.callback_timezone||"");
+ return `<section class="card closing-card">
+   <div class="closing-kicker">FINAL STEP</div>
+   <h2>CLOSING / ATTORNEY CALLBACK</h2>
+   <div class="section-intro"><div><strong>ATTORNEY CALLBACK</strong><br><span>Complete the scheduling details, then read the closing script exactly as written.</span></div><span>Intake complete</span></div>
+   <div class="closing-schedule">
+     <div class="closing-schedule-head"><span class="closing-icon">📅</span><div><strong>Schedule the attorney callback</strong><small>Open Calendly and schedule the appointment with the claimant.</small></div></div>
+     <a class="closing-calendly" href="${CLOSING_SCRIPT.calendly}" target="_blank" rel="noopener noreferrer">Open Calendly →</a>
+     <div class="closing-fields">
+       <label>Day, Date<input type="text" data-input-key="callback_day" value="${esc(day)}" placeholder="e.g. Thursday, September 24"></label>
+       <label>Time<input type="text" data-input-key="callback_time" value="${esc(time)}" placeholder="e.g. 2:30 PM"></label>
+       <label>Time Zone<input type="text" data-input-key="callback_timezone" value="${esc(tz)}" placeholder="e.g. Pacific Time"></label>
+     </div>
+   </div>
+   <div class="closing-script">
+     <div class="who">AGENT SAYS — CLOSING SCRIPT</div>
+     <div class="closing-line">Great, ${esc(first)}, your intake is now complete.</div>
+     <div class="closing-line">The next step is to schedule a brief callback with the attorney to review your case. We do need to have that call completed within the next day or two, so let’s get a time scheduled for you now.</div>
+     <div class="closing-action"><b>AGENT:</b> Open Calendly and schedule the appointment with the claimant.</div>
+     <div class="closing-line">Okay, I have you scheduled for <b>${esc(day||"[Day, Date]")}</b> at <b>${esc(time||"[Time]")}</b> <b>${esc(tz||"[Time Zone]")}</b>.</div>
+     <div class="closing-line">Before we finish, can you do me a quick favor and add this contact to your phone so you recognize the number when he calls?</div>
+     <div class="attorney-contact"><strong>${CLOSING_SCRIPT.attorney}</strong><span>${CLOSING_SCRIPT.phone}</span></div>
+     <div class="closing-line">I’ll give you a second to save that.</div>
+     <div class="closing-action"><b>Agent pauses and confirms.</b></div>
+     <div class="closing-line">Perfect. Again, your appointment with Michael is <b>${esc(day||"[Day]")}</b> at <b>${esc(time||"[Time]")}</b>. Please make sure you’re available and keep your phone nearby at that time so you don’t miss his call.</div>
+     <div class="closing-line">Your intake is complete, and Michael will review everything with you during your scheduled callback. Do you have any questions for me before we finish?</div>
+   </div>
+   <div class="closing-actions"><button type="button" class="btn primary" onclick="completeClosing()">✓ Complete Intake</button><button type="button" class="btn" onclick="exportDocx()">Export DOCX</button></div>
+ </section>`;
+}
+function completeClosing(){
+ setA("closing_complete","YES");
+ alert("Intake complete. The attorney callback closing script has been recorded.");
+}
+
+function render(){const sec=sections[current];if(current===0){document.getElementById("app").innerHTML=renderCallFlow();}else if(sec==="CLOSING / ATTORNEY CALLBACK"){document.getElementById("app").innerHTML=renderClosing();}else{let qs=QUESTIONS.filter(q=>q.section===sec);if(sec==='CITIZENSHIP'&&answers.q_17==='YES'){qs=qs.filter(q=>!['18','19','20','21','22'].includes(q.num));}document.getElementById("app").innerHTML=`<section class="card"><h2>${esc(sec)}</h2><div class="section-intro"><div><strong>GUIDED WORKFLOW</strong><br><span>Answer the question, follow any conditional instruction, then continue. DQ checkpoints stop the intake.</span></div><span>${qs.length} items in this section</span></div><div class="grid">${qs.map(renderQuestion).join("")}</div><div class="stop" id="stop"></div><div class="actions2"><button class="btn" onclick="prev()">↶ Go Back</button><button class="btn primary" onclick="next()">Continue →</button></div></section>`;}document.querySelectorAll(".navitem").forEach((x,i)=>x.classList.toggle("active",i===current));document.getElementById("bar").style.width=((current+1)/sections.length*100)+"%";scrollTo({top:0,behavior:"smooth"});}
 function prev(){if(current>0){current--;render();}}
 function dq(msg){const s=document.getElementById("stop");if(s){s.style.display="block";s.className="stop dq-live";s.innerHTML="<b>CLIENT DQ — DO NOT CONTINUE</b><br>"+esc(msg);}showDQModal(msg);return true}
 function checkDQ(){
@@ -410,7 +463,7 @@ function le16(n){return new Uint8Array([n&255,(n>>>8)&255])}function le32(n){ret
 function zipStore(files){const chunks=[],central=[];let offset=0;const now=new Date(),dostime=(now.getHours()<<11)|(now.getMinutes()<<5)|(Math.floor(now.getSeconds()/2));const dosdate=((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();for(const f of files){const name=u8(f.name),data=u8(f.data),crc=crc32(data);const local=concatBytes(u8("PK\x03\x04"),le16(20),le16(0),le16(0),le16(dostime),le16(dosdate),le32(crc),le32(data.length),le32(data.length),le16(name.length),le16(0),name,data);chunks.push(local);central.push(concatBytes(u8("PK\x01\x02"),le16(20),le16(20),le16(0),le16(0),le16(dostime),le16(dosdate),le32(crc),le32(data.length),le32(data.length),le16(name.length),le16(0),le16(0),le16(0),le16(0),le32(0),le32(offset),name));offset+=local.length}const cd=concatBytes(...central),body=concatBytes(...chunks,cd);return concatBytes(body,u8("PK\x05\x06"),le16(0),le16(0),le16(files.length),le16(files.length),le32(cd.length),le32(offset),le16(0));}
 function xmlEscape(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 function wordParagraph(text,bold=false){return `<w:p><w:r>${bold?"<w:rPr><w:b/></w:rPr>":""}<w:t xml:space="preserve">${xmlEscape(text)}</w:t></w:r></w:p>`}
-function makeDocxXml(){let body=wordParagraph("Full Legal Name",true)+wordParagraph("Answer: "+(answers.pre_full_name||""));sections.slice(1).forEach(sec=>{body+=wordParagraph(sec,true);QUESTIONS.filter(q=>q.section===sec).forEach(q=>{body+=wordParagraph(q.num+". "+q.label,true);body+=wordParagraph("Answer: "+(answers[q.key]||""));if(q.num==='32'&&answers.q_32_dli)body+=wordParagraph("DLI (Date Last Insured): "+answers.q_32_dli);if(q.key==='q_27'){body+=wordParagraph("Attorney history status: "+(answers.q_27_attorney||""));if(answers.q_27_attorney==='NO')body+=wordParagraph("AGENT SAYS: "+AGENT_SAYS_AFTER['27']);}if(AGENT_SAYS_AFTER[q.num]&&answers[q.key]&&q.key!=='q_27')body+=wordParagraph("AGENT SAYS: "+AGENT_SAYS_AFTER[q.num]);if(REVIEW_RULES[q.num]&&answers[q.key])body+=wordParagraph("AGENT ACTION: "+REVIEW_RULES[q.num]);});});body+=`<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/></w:sectPr>`;return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`}
+function makeDocxXml(){let body=wordParagraph("Full Legal Name",true)+wordParagraph("Answer: "+(answers.pre_full_name||""));sections.slice(1).forEach(sec=>{body+=wordParagraph(sec,true);QUESTIONS.filter(q=>q.section===sec).forEach(q=>{body+=wordParagraph(q.num+". "+q.label,true);body+=wordParagraph("Answer: "+(answers[q.key]||""));if(q.num==='32'&&answers.q_32_dli)body+=wordParagraph("DLI (Date Last Insured): "+answers.q_32_dli);if(q.key==='q_27'){body+=wordParagraph("Attorney history status: "+(answers.q_27_attorney||""));if(answers.q_27_attorney==='NO')body+=wordParagraph("AGENT SAYS: "+AGENT_SAYS_AFTER['27']);}if(AGENT_SAYS_AFTER[q.num]&&answers[q.key]&&q.key!=='q_27')body+=wordParagraph("AGENT SAYS: "+AGENT_SAYS_AFTER[q.num]);if(REVIEW_RULES[q.num]&&answers[q.key])body+=wordParagraph("AGENT ACTION: "+REVIEW_RULES[q.num]);});});body+=wordParagraph("CLOSING / ATTORNEY CALLBACK",true)+wordParagraph("Schedule: "+(answers.callback_day||"")+" | "+(answers.callback_time||"")+" | "+(answers.callback_timezone||""));body+=`<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/></w:sectPr>`;return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`}
 function exportDocx(){const files=[{name:"[Content_Types].xml",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/></Types>`},{name:"_rels/.rels",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`},{name:"word/_rels/document.xml.rels",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`},{name:"word/document.xml",data:makeDocxXml()},{name:"word/settings.xml",data:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:zoom w:percent="100"/></w:settings>`}];const zip=zipStore(files),blob=new Blob([zip],{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="SSDI_Intake_Answers.docx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
 document.addEventListener('click',function(e){
  const oc=e.target.closest('[data-opening-continue]');
