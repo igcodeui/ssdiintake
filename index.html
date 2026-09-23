@@ -252,17 +252,34 @@ const CONDITIONAL_RULES={
  "195":{kind:"action",title:"AGENT ACTION",body:"If unsure, enter “Can ask doctor.” Do not instruct the claimant to contact the provider; attorney will advise."},
  "197":{kind:"action",title:"AFFIRMATION",body:"Record YES or NO. The revised script does not state an automatic DQ solely from a NO answer; document the response and any applicable DQ/approval note."}
 };
+function normalizeYesNo(value){
+ return String(value ?? '').trim().replace(/\s+/g,' ').toUpperCase();
+}
+function parseMonthlyEarnings(value){
+ const raw=String(value ?? '').trim();
+ if(!raw)return NaN;
+ // Accept 1700, 1,700, $1,700, $1700.00, etc. Ignore currency symbols/commas/spaces.
+ const cleaned=raw.replace(/[$,\s]/g,'').replace(/[^0-9.\-]/g,'');
+ if(!cleaned)return NaN;
+ const n=Number(cleaned);
+ return Number.isFinite(n)?n:NaN;
+}
+function claimantCurrentlyWorking(){
+ const fromAnswers=normalizeYesNo(answers.q_61);
+ if(fromAnswers==='YES')return true;
+ // Fallback to the currently selected Q61 button in case the answer state has not yet refreshed.
+ const selected=document.querySelector('[data-choice-key="q_61"].sel');
+ return selected ? normalizeYesNo(selected.getAttribute('data-choice-value'))==='YES' : false;
+}
 function evaluateAnswer(k,v){
  if(k==='q_38'&&v==='NO') return {type:'dq',msg:'Question 38 = NO. The source script says DQ / STOP.'};
  if(k==='q_a'&&v==='YES') return {type:'dq',msg:'Question A = YES. Current Disability/SSI benefits = DQ / STOP.'};
  if(k==='q_40'&&v==='Approved') return {type:'dq',msg:'Question 40 = APPROVED. The source script says DQ / STOP.'};
  if(k==='q_58'&&v==='NO') return {type:'dq',msg:'Question 58 = NO. The source script says DQ / STOP.'};
  if(k==='q_69a'){
-   const working=String(answers.q_61||'').trim().toUpperCase();
-   const raw=String(v??'').trim();
-   const numeric=raw.replace(/[^0-9.]/g,'');
-   const e=numeric?Number(numeric):NaN;
-   if(working==='YES' && Number.isFinite(e) && e>1690){
+   const working=claimantCurrentlyWorking();
+   const e=parseMonthlyEarnings(v);
+   if(working && Number.isFinite(e) && e>1690){
      return {type:'dq',msg:'Question 69A is over $1,690/month while the claimant is currently working. The source script says DQ / STOP.'};
    }
  }
@@ -282,7 +299,7 @@ function showDQModal(reason){
 function closeDQModal(){document.getElementById('dqModal')?.classList.remove('open');}
 function choose(k,v){
  answers[k]=v; saveLocalSilent();
- if(k==='q_61' && String(v).trim().toUpperCase()==='YES' && answers.q_69a){
+ if(k==='q_61' && normalizeYesNo(v)==='YES' && answers.q_69a){
    const existing=evaluateAnswer('q_69a',answers.q_69a);
    if(existing?.type==='dq') setTimeout(()=>showDQModal(existing.msg),0);
  }
@@ -410,11 +427,17 @@ document.addEventListener('input',function(e){
  if(!el)return;
  setA(el.dataset.inputKey,el.value);
  if(el.dataset.inputKey==='q_69a'){
-   const result=evaluateAnswer('q_69a',el.value);
-   if(result?.type==='dq' && !el.dataset.dqShown){
+   const amount=parseMonthlyEarnings(el.value);
+   const working=claimantCurrentlyWorking();
+   const result=(working && Number.isFinite(amount) && amount>1690)
+     ? {type:'dq',msg:'Question 69A is over $1,690/month while the claimant is currently working. The source script says DQ / STOP.'}
+     : null;
+   if(result?.type==='dq'){
      el.dataset.dqShown='1';
-     setTimeout(()=>{const s=document.getElementById('stop');if(s){s.style.display='block';s.className='stop dq-live';s.innerHTML=`<b>CLIENT DQ — DO NOT CONTINUE</b><br>${esc(result.msg)}`;}showDQModal(result.msg);},0);
-   } else if(!result){
+     const s=document.getElementById('stop');
+     if(s){s.style.display='block';s.className='stop dq-live';s.innerHTML=`<b>CLIENT DQ — DO NOT CONTINUE</b><br>${esc(result.msg)}`;}
+     showDQModal(result.msg);
+   } else {
      delete el.dataset.dqShown;
      const s=document.getElementById('stop');
      if(s && s.classList.contains('dq-live')){s.style.display='none';s.innerHTML='';}
